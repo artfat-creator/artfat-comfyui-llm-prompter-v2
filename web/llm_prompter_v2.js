@@ -1138,6 +1138,28 @@ function renumberRefLinks(promptData) {
     }
 }
 
+// A wired `brief` (the BBox canvas sends its idea + boxes) hides the panel's own brief text from
+// the backend. File that text on the optional `brief_panel` input so both reach the writer.
+function fileWiredBriefs(promptData) {
+    const out = promptData && promptData.output;
+    if (!out) return;
+    for (const node of (app.graph && app.graph._nodes) || []) {
+        if (node.constructor.comfyClass !== "ArtfatLLMPrompterV2") continue;
+        const entry = out[String(node.id)];
+        const inp = node.inputs && node.inputs.find((i) => i.name === "brief");
+        const text = String((W(node, "brief") || {}).value || "").trim();
+        if (entry && inp && inp.link != null && text) entry.inputs.brief_panel = text;
+    }
+}
+
+function hideBriefPanelSocket(node) {
+    const i = node.inputs ? node.inputs.findIndex((x) => x.name === "brief_panel") : -1;
+    if (i < 0) return;
+    if (node.inputs[i].link != null && node.disconnectInput) node.disconnectInput(i);
+    if (typeof node.removeInput === "function") node.removeInput(i);
+    else node.inputs.splice(i, 1);
+}
+
 function patchGraphToPromptForRefLinks() {
     if (app.__artfatV2PromptPatched || typeof app.graphToPrompt !== "function") return;
     app.__artfatV2PromptPatched = true;
@@ -1146,6 +1168,8 @@ function patchGraphToPromptForRefLinks() {
         const promptData = await original.apply(this, arguments);
         try { renumberRefLinks(promptData); }
         catch (e) { console.error("[artfat-llm-v2] ref wire renumbering failed:", e); }
+        try { fileWiredBriefs(promptData); }
+        catch (e) { console.error("[artfat-llm-v2] panel brief filing failed:", e); }
         return promptData;
     };
 }
@@ -2640,6 +2664,7 @@ app.registerExtension({
             }
             try { ensureRefsOutput(this); } catch (e) {}
             try { ensureRefInInput(this); } catch (e) {}
+            try { hideBriefPanelSocket(this); } catch (e) {}
             try { applySocketLabels(this); } catch (e) {}
             try { patchCanvasForRefLinks(); } catch (e) {}
             try { patchCanvasForRefInWires(); } catch (e) {}
@@ -2653,6 +2678,7 @@ app.registerExtension({
             onAdded && onAdded.apply(this, arguments);
             try { ensureRefsOutput(this); } catch (e) {}
             try { ensureRefInInput(this); } catch (e) {}
+            try { hideBriefPanelSocket(this); } catch (e) {}
             try { applySocketLabels(this); } catch (e) {}
             try { patchCanvasForRefLinks(); } catch (e) {}
             try { patchCanvasForRefInWires(); } catch (e) {}
@@ -2730,12 +2756,14 @@ app.registerExtension({
             // nothing else in the graph reconnects.
             try { ensureRefsOutput(this); } catch (e) {}
             try { ensureRefInInput(this); } catch (e) {}
+            try { hideBriefPanelSocket(this); } catch (e) {}
             try { applySocketLabels(this); } catch (e) {}
             try { patchCanvasForRefLinks(); } catch (e) {}
             setTimeout(() => {
                 // Migration of image_1/image_2 links needs the graph's link store complete, so
                 // it runs again here, after configure() returned.
                 try { ensureRefInInput(this); } catch (e) {}
+                try { hideBriefPanelSocket(this); } catch (e) {}
                 try { resyncAll(this); } catch (e) {}
                 // Second pass on the next tick: some builds reconcile node.outputs against the
                 // node definition AFTER configure returns, which would silently drop the

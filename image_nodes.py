@@ -344,6 +344,10 @@ class ArtfatLLMPrompterV2:
                     "tooltip": "ON = reuse the prompt already in final_prompt, the LLM is not called (fast re-runs of the same shot, e.g. a box edit of a held frame). OFF = write a new prompt every run."}),
             },
             "optional": {
+                # The panel's own brief when `brief` is wired (e.g. from Artfat BBox Canvas). A wired
+                # input hides the widget's text from the backend, so the JS files it here at queue
+                # time; the socket itself is removed in the UI.
+                "brief_panel": ("STRING", {"forceInput": True}),
                 "image_1": ("IMAGE", {"tooltip": "Frames to caption / build the prompt from. Counted before the gallery, so this is <Image 1>."}),
                 "image_2": ("IMAGE", {"tooltip": "More frames, counted after image_1 and before the gallery."}),
                 # image_3..image_9 complete the `ref in` socket. The canvas shows ONE input and
@@ -607,6 +611,11 @@ class ArtfatLLMPrompterV2:
         if instruction_preset not in INSTRUCTION_PRESETS:
             instruction_preset = "Custom"
         brief = str(g("brief") or "")
+        # Your own brief (typed in the panel) + the one on the wire (the canvas idea and its boxes):
+        # both reach the writer, yours first. Either alone works as before.
+        panel_brief = str(g("brief_panel") or "").strip()
+        if panel_brief and panel_brief not in brief:
+            brief = (panel_brief + "\n\n" + brief.strip()).strip()
         final_prompt = str(g("final_prompt") or "")
         negative = str(g("negative") or "")
         prefix = str(g("prefix") or "")
