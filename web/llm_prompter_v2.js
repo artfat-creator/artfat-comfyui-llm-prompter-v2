@@ -310,6 +310,28 @@ function searchableSel(node, name, placeholder, getPrefix) {
     return { wrap, refresh };
 }
 
+// Default text-box heights (px), fitted to the node at its stock size (560 x 1500).
+const TA_HEIGHT = {
+    final_prompt: 590, negative: 140, batch_prompts: 250,
+    brief: 200, scene: 190, action: 260,
+    system_prompt: 90, instruction: 106, ref_description: 106,
+};
+// A box the user drags keeps its height: saved in node.properties, so in the workflow file.
+function keepHeight(node, name, el) {
+    const saved = node.properties && node.properties.alp2_heights && node.properties.alp2_heights[name];
+    const h = saved || TA_HEIGHT[name];
+    if (h) el.style.height = h + "px";
+    if (typeof ResizeObserver === "undefined") return;
+    new ResizeObserver(() => {
+        const now = el.offsetHeight;
+        if (!now) return; // a hidden tab reports 0, that is not a resize
+        node.properties = node.properties || {};
+        const kept = node.properties.alp2_heights || {};
+        if (now === (kept[name] || TA_HEIGHT[name])) return;
+        node.properties.alp2_heights = { ...kept, [name]: now };
+    }).observe(el);
+}
+
 // Build a <textarea>/<input> bound to an EXISTING string/number widget.
 function txtFor(node, name, multiline) {
     const w = W(node, name);
@@ -321,6 +343,7 @@ function txtFor(node, name, multiline) {
     const sync = () => { w.value = el.value; };
     el.addEventListener("input", sync);
     el.addEventListener("change", () => { sync(); node.setDirtyCanvas(true, true); });
+    if (multiline) keepHeight(node, name, el);
     w._domEl = el; // so onExecuted can push generated text back
     w._domSync = () => { el.value = w.value !== undefined && w.value !== null ? w.value : ""; };
     return el;
@@ -2563,8 +2586,8 @@ function buildUI(node) {
     bindAuto("instruction_preset", "instruction", "/artfat_llm_v2/instruction_preset");
 
     setTimeout(() => {
-        const want = 620;
-        if (node.size[1] < want) node.setSize([Math.max(node.size[0], 360), want]);
+        // Stock size 560 x 1500: the text-box defaults in TA_HEIGHT are fitted to it.
+        if (node.size[1] < 1500) node.setSize([Math.max(node.size[0], 560), 1500]);
         resyncAll(node); // belt-and-suspenders: if configure already ran, reflect saved values
         node.setDirtyCanvas(true, true);
     }, 30);
