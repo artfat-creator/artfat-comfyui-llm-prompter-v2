@@ -5,12 +5,6 @@ pillow
 gguf
 tqdm
 
-# llama-cpp-python: a plain CPU wheel as a universal fallback so the node always imports
-# (any Python / OS). The GPU (CUDA) build is installed automatically by install.py, which
-# detects your torch CUDA version and fetches the matching JamePeng wheel (Windows + NVIDIA).
-# Hardcoding a single CUDA wheel here is WRONG: a cu128 wheel silently falls back to CPU on
-# a cu130 torch (ggml-cuda.dll links cudart64_<major>, which must match torch's). So GPU
-# selection lives in install.py, not here. On CPU-only / non-Windows the node still runs
-# (slower); the model-load warning prints the exact manual command. See:
-# https://github.com/JamePeng/llama-cpp-python/releases
-llama-cpp-python
+# llama-cpp-python is installed by install.py, not here: the GPU (CUDA) build matching your
+# torch, or the CPU build as a fallback. Listed here, pip would try to compile it whenever no
+# wheel fits the running Python, and on ComfyUI portable that fails the whole install.

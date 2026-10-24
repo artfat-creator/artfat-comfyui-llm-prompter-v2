@@ -14,8 +14,11 @@ Runs automatically via ComfyUI-Manager right after the node is cloned. Also safe
 by hand (with ComfyUI FULLY CLOSED, else the llama DLLs are locked):
     <python.exe> install.py
 
-Skips (and leaves the load-time warning in llama_core to advise manually) when:
-  non-Windows, no NVIDIA GPU, or torch is a CPU-only build / not installed.
+Skips the GPU build when: non-Windows, no NVIDIA GPU, or torch is a CPU-only build /
+not installed. If llama-cpp-python is then still missing, it installs the plain CPU build
+(prebuilt wheel when one exists) so the node imports. It is not in requirements.txt: with
+no wheel for the running Python, pip would try to compile it, and on ComfyUI portable that
+fails and takes the other requirements down with it.
 """
 
 import subprocess
@@ -107,7 +110,26 @@ def _llama_already_loaded():
     return "llama_cpp" in sys.modules
 
 
+def _cpu_fallback():
+    """Plain CPU build, only when nothing is installed yet. Never replaces a GPU build."""
+    if _installed_wheel() is not None or _llama_already_loaded():
+        return
+    cmd = [sys.executable, "-m", "pip", "install", "--prefer-binary", "llama-cpp-python",
+           "--extra-index-url", "https://abetlen.github.io/llama-cpp-python/whl/cpu"]
+    print("[llm-prompter-v2] Installing the CPU build of llama-cpp-python (the LLM will run on CPU) ...")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"[llm-prompter-v2] CPU install failed ({e}). Install llama-cpp-python by hand: "
+              "https://github.com/JamePeng/llama-cpp-python/releases")
+
+
 def main():
+    _gpu()
+    _cpu_fallback()
+
+
+def _gpu():
     if sys.platform != "win32":
         print("[llm-prompter-v2] Non-Windows platform - GPU auto-install not wired up yet; "
               "see the load-time warning for the manual command.")

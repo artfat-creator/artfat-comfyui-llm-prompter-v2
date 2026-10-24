@@ -14,13 +14,17 @@ MiniMax-H3 conditioning and its media transports) and the image-side features fo
 
 ## Install
 
-Clone into `ComfyUI/custom_nodes/`, install the requirements, restart ComfyUI.
+Not in the ComfyUI Manager list yet: ComfyUI Manager → **Install via Git URL** →
+`https://github.com/artfat-creator/artfat-comfyui-llm-prompter-v2` (it runs both steps below).
+By hand: clone into `ComfyUI/custom_nodes/`, then from the ComfyUI portable folder:
 
-    pip install -r requirements.txt
+    python_embeded\python.exe -m pip install -r ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\requirements.txt
+    python_embeded\python.exe ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\install.py
 
-`llama-cpp-python` ships here as a CPU wheel so the node always imports. `install.py` detects
-the CUDA version your torch was built against and fetches the matching JamePeng GPU wheel
-(Windows + NVIDIA). If the model loads on CPU, the console prints the exact manual command.
+`install.py` installs `llama-cpp-python`: it detects the CUDA version your torch was built
+against and fetches the matching JamePeng GPU wheel (Windows + NVIDIA); anywhere else it puts in
+the CPU build so the node still imports. If the model loads on CPU, the console prints the exact
+manual command. Restart ComfyUI.
 
 Put GGUF models in `ComfyUI/models/LLM/` (a matching `mmproj-*.gguf` next to them for vision).
 `ComfyUI/models/text_encoders` is scanned too, because GGUF VL encoders conventionally live there.
