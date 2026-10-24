@@ -145,14 +145,19 @@ function selFor(node, name) {
 // A family narrows the two preset lists SEPARATELY, because the format files and the task
 // entries are not named from the same vocabulary. One prefix across both lists is what made
 // picking "Qwen 2.1 Edit" empty the format list: the edit presets exist only as tasks.
-// An empty prefix means "do not narrow this list at all".
+// An empty prefix means "do not narrow this list at all"; a function is a test on the name.
 //   sys = format presets (HOW it is written, the .txt files)
 //   ins = task presets   (WHAT to do, the entries in presets.py)
 // Mix deliberately reuses the T2I formats: both write a whole frame to the same Qwen contract
 // and only the task differs, so duplicating 64 style files under a second prefix would buy
 // nothing. T2I leaves its task list unfiltered, since any ordinary task fits a t2i style.
+// MOSS Image: the format list shows only the MSS_ files (the general styles rewritten for MOSS's
+// longer prompts) plus Custom; the task list hides the Qwen tasks.
+const isMossFormat = (v) => v === "Custom" || v.startsWith("MSS_");
+const isMossTask = (v) => !v.startsWith("Q21");
 const PRESET_FAMILIES = [
     { label: "Any / general", sys: "", ins: "" },
+    { label: "MOSS Image", sys: isMossFormat, ins: isMossTask },
     { label: "Qwen 2.1 Edit", sys: "Q21E_", ins: "Q21E_" },
     { label: "Qwen 2.1 T2I", sys: "Q21T_", ins: "" },
     { label: "Qwen 2.1 Mix", sys: "Q21T_", ins: "Q21MIX_" },
@@ -165,7 +170,7 @@ function fillFilteredOptions(w, el, query, prefix) {
     const q = String(query || "").trim().toLowerCase();
     const keep = all.filter((v) => {
         const s = String(v);
-        if (prefix && !s.startsWith(prefix)) return false;
+        if (typeof prefix === "function" ? !prefix(s) : (prefix && !s.startsWith(prefix))) return false;
         return !q || s.toLowerCase().includes(q);
     });
     const cur = w.value;
@@ -221,7 +226,7 @@ function searchableSel(node, name, placeholder, getPrefix) {
         const pre = getPrefix ? getPrefix() : "";
         return all.filter((v) => {
             const t = String(v);
-            if (pre && !t.startsWith(pre)) return false;
+            if (typeof pre === "function" ? !pre(t) : (pre && !t.startsWith(pre))) return false;
             return !q || t.toLowerCase().includes(q);
         });
     };
