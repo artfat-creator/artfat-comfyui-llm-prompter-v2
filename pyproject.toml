@@ -1,7 +1,7 @@
 [project]
-name = "comfyui-llm-prompter-v2"
+name = "comfyui-llm-prompter-v2-test"
 description = "Image prompt engine for ComfyUI: one node turns a brief plus reference images into a finished image prompt via a resident llama.cpp VLM, then encodes it to CONDITIONING. Tabbed panel with a drag-and-drop reference gallery, reference sets, @-insert reference tags, persona identity described once, composite/batch captioning and a prompt-list mode."
-version = "0.2.2"
+version = "0.0.1"
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,5 +19,5 @@ Issues = "https://github.com/artfat-creator/artfat-comfyui-llm-prompter-v2/issue
 
 [tool.comfy]
 PublisherId = "artfat-creator"
-DisplayName = "Artfat LLM Prompter v2"
+DisplayName = "Artfat LLM Prompter v2 (registry test)"
 Icon = ""
