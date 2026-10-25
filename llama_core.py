@@ -40,7 +40,7 @@ from .support.gguf_layers import get_layer_count, get_nextn_count
 # (CPU-only build if not), and whether its required CUDA major (from its cudart/cublas
 # import) matches torch's CUDA major — a mismatch (e.g. cu128 wheel on cu130 torch) means
 # ggml-cuda.dll can't load its runtime DLLs and silently falls back to CPU.
-_JAMEPENG_VER, _JAMEPENG_DATE = "0.3.48", "20260821"
+_JAMEPENG_VER, _JAMEPENG_DATE = "0.4.3", "20261017"
 _CU_TAGS = {12: [124, 126, 128], 13: [130, 131]}
 
 
@@ -91,7 +91,12 @@ def _gpu_status():
     """('ok'|'cpu'|'mismatch'|'unknown', (need_major, torch_major))."""
     try:
         import llama_cpp
-        cuda_dll = os.path.join(os.path.dirname(llama_cpp.__file__), "lib", "ggml-cuda.dll")
+        lib = os.path.join(os.path.dirname(llama_cpp.__file__), "lib")
+        if sys.platform != "win32":
+            # The DLL import check below is Windows-only; on Linux only tell CPU from CUDA.
+            has_cuda = os.path.isdir(lib) and any("ggml-cuda" in f for f in os.listdir(lib))
+            return ("unknown" if has_cuda else "cpu"), None
+        cuda_dll = os.path.join(lib, "ggml-cuda.dll")
         if not os.path.exists(cuda_dll):
             return "cpu", None
         need = _ggml_cuda_major(cuda_dll)
@@ -112,8 +117,8 @@ _GPU_STATUS, _GPU_DETAIL = _gpu_status()
 
 
 def _cuda_wheel_hint():
-    """GPU wheel for THIS Python + THIS torch CUDA version, as (python, url). Windows wheels;
-    on other systems url is None and the user picks one on the releases page."""
+    """GPU wheel for THIS Python + THIS torch CUDA version, as (python, url): Windows and
+    Linux x86_64 builds; url is None elsewhere (the user picks one on the releases page)."""
     tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
     cu = 128
     try:
@@ -126,11 +131,15 @@ def _cuda_wheel_hint():
             cu = fitting[-1] if fitting else (tags[0] if tags else 128)
     except Exception:
         pass
-    if sys.platform != "win32":
+    if sys.platform == "win32":
+        osname, plat = "win", "win_amd64"
+    elif sys.platform.startswith("linux"):
+        osname, plat = "linux", "linux_x86_64"
+    else:
         return sys.executable, None
     url = (f"https://github.com/JamePeng/llama-cpp-python/releases/download/"
-           f"v{_JAMEPENG_VER}-cu{cu}-win-{_JAMEPENG_DATE}/"
-           f"llama_cpp_python-{_JAMEPENG_VER}+cu{cu}-{tag}-{tag}-win_amd64.whl")
+           f"v{_JAMEPENG_VER}-cu{cu}-{osname}-{_JAMEPENG_DATE}/"
+           f"llama_cpp_python-{_JAMEPENG_VER}+cu{cu}-{tag}-{tag}-{plat}.whl")
     return sys.executable, url
 
 
@@ -146,7 +155,7 @@ def _install_hint():
                 f'  "{exe}" -m pip install --force-reinstall --no-deps {url}',
                 f"Other builds: {_RELEASES}"]
     tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-    return [f"Pick the linux_x86_64 wheel for your CUDA and {tag} on {_RELEASES}, then:",
+    return [f"Pick the wheel for your CUDA and {tag} on {_RELEASES}, then:",
             f'  "{exe}" -m pip install --force-reinstall --no-deps <wheel URL>',
             f'CPU-only fallback: "{exe}" -m pip install llama-cpp-python']
 

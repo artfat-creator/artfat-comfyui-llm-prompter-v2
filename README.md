@@ -24,9 +24,13 @@ MiniMax-H3 conditioning and its media transports) and the image-side features fo
 
    Windows + NVIDIA, ComfyUI portable with torch cu130 and Python 3.13 (the current portable):
 
-       python_embeded\python.exe -m pip install --force-reinstall --no-deps https://github.com/JamePeng/llama-cpp-python/releases/download/v0.3.48-cu130-win-20260821/llama_cpp_python-0.3.48+cu130-cp313-cp313-win_amd64.whl
+       python_embeded\python.exe -m pip install --force-reinstall --no-deps https://github.com/JamePeng/llama-cpp-python/releases/download/v0.4.3-cu130-win-20261017/llama_cpp_python-0.4.3+cu130-cp313-cp313-win_amd64.whl
 
-   Other CUDA / Python versions and Linux: pick the matching wheel on
+   Linux + NVIDIA (torch cu130; Python 3.12 shown, use your ComfyUI venv's python and its `cpXXX`):
+
+       python -m pip install --force-reinstall --no-deps https://github.com/JamePeng/llama-cpp-python/releases/download/v0.4.3-cu130-linux-20261017/llama_cpp_python-0.4.3+cu130-cp312-cp312-linux_x86_64.whl
+
+   Other CUDA / Python versions: pick the matching wheel on
    https://github.com/JamePeng/llama-cpp-python/releases (`cuXXX` = your torch CUDA,
    `cp3XX` = your Python). No NVIDIA GPU: `pip install llama-cpp-python` (CPU, slow).
 

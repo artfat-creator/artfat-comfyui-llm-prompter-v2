@@ -593,6 +593,10 @@ class ArtfatLLMPrompterV2:
             mirostat_tau=_num(g("mirostat_tau"), 5.0, 0.0, 10.0),
             mirostat_eta=_num(g("mirostat_eta"), 0.1, 0.0, 1.0),
         )
+        # A (thinking) handler spends tokens on its reasoning first. With the 512 default it can
+        # run out before </think>, and the reasoning then ends up in the prompt. Give it room.
+        if "(thinking)" in chat_handler and sampler_vals["max_tokens"] < 2048:
+            sampler_vals["max_tokens"] = min(2048, max(512, n_ctx // 2))
         type_k = g("type_k") if g("type_k") in ("f16", "q8_0", "q4_0") else "f16"
         type_v = g("type_v") if g("type_v") in ("f16", "q8_0", "q4_0") else "f16"
         max_size = int(_num(g("max_size"), 512, 128, cast=int))
