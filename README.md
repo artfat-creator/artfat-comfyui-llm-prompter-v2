@@ -14,13 +14,16 @@ MiniMax-H3 conditioning and its media transports) and the image-side features fo
 
 ## Install
 
-1. **The node.** ComfyUI Manager → **Install via Git URL** →
+1. **The node.** ComfyUI Manager → Custom Nodes → search **Artfat LLM Prompter v2** → Install.
+   Not found or blocked by your Manager security level? ComfyUI Manager → **Install via Git URL** →
    `https://github.com/artfat-creator/artfat-comfyui-llm-prompter-v2`
    (or clone it into `ComfyUI/custom_nodes/` and run
    `python_embeded\python.exe -m pip install -r ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\requirements.txt`).
-2. **llama-cpp-python (the LLM engine), once.** The node does not install it by itself. Start
-   ComfyUI once: if llama-cpp-python is missing or runs on CPU, the console prints the exact
-   command for your system. Close ComfyUI completely, run that command, start ComfyUI again.
+2. **llama-cpp-python (the LLM engine).** ComfyUI Manager runs the node's `install.py`, which
+   picks the GPU build matching your torch CUDA (Windows and Linux; CPU build as a fallback).
+   By hand: `python_embeded\python.exe ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\install.py`
+   with ComfyUI closed. If it still runs on CPU, the console prints the exact command; the
+   commands below do the same.
 
    Windows + NVIDIA, ComfyUI portable with torch cu130 and Python 3.13 (the current portable):
 
