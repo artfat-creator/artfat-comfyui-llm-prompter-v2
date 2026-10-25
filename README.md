@@ -14,7 +14,7 @@ MiniMax-H3 conditioning and its media transports) and the image-side features fo
 
 ## Install
 
-1. **The node.** ComfyUI Manager → Custom Nodes → search **Artfat LLM Prompter v2** → Install.
+1. **The node.** ComfyUI Manager → Custom Nodes → search **Artfat** → **Artfat LLM Prompter v2** → Install.
    Not found or blocked by your Manager security level? ComfyUI Manager → **Install via Git URL** →
    `https://github.com/artfat-creator/artfat-comfyui-llm-prompter-v2`
    (or clone it into `ComfyUI/custom_nodes/` and run
