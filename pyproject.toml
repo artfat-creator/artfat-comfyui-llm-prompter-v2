@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-llm-prompter-v2"
 description = "Image prompt engine for ComfyUI: one node turns a brief plus reference images into a finished image prompt via a resident llama.cpp VLM, then encodes it to CONDITIONING. Tabbed panel with a drag-and-drop reference gallery, reference sets, @-insert reference tags, persona identity described once, composite/batch captioning and a prompt-list mode."
-version = "0.1.0"
+version = "0.2.0"
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"

@@ -5,6 +5,5 @@ pillow
 gguf
 tqdm
 
-# llama-cpp-python is installed by install.py, not here: the GPU (CUDA) build matching your
-# torch, or the CPU build as a fallback. Listed here, pip would try to compile it whenever no
-# wheel fits the running Python, and on ComfyUI portable that fails the whole install.
+# llama-cpp-python is not listed: the right GPU build depends on your torch CUDA and OS.
+# The node prints the exact install command on first start (see README).

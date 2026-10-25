@@ -14,17 +14,21 @@ MiniMax-H3 conditioning and its media transports) and the image-side features fo
 
 ## Install
 
-Not in the ComfyUI Manager list yet: ComfyUI Manager → **Install via Git URL** →
-`https://github.com/artfat-creator/artfat-comfyui-llm-prompter-v2` (it runs both steps below).
-By hand: clone into `ComfyUI/custom_nodes/`, then from the ComfyUI portable folder:
+1. **The node.** ComfyUI Manager → **Install via Git URL** →
+   `https://github.com/artfat-creator/artfat-comfyui-llm-prompter-v2`
+   (or clone it into `ComfyUI/custom_nodes/` and run
+   `python_embeded\python.exe -m pip install -r ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\requirements.txt`).
+2. **llama-cpp-python (the LLM engine), once.** The node does not install it by itself. Start
+   ComfyUI once: if llama-cpp-python is missing or runs on CPU, the console prints the exact
+   command for your system. Close ComfyUI completely, run that command, start ComfyUI again.
 
-    python_embeded\python.exe -m pip install -r ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\requirements.txt
-    python_embeded\python.exe ComfyUI\custom_nodes\artfat-comfyui-llm-prompter-v2\install.py
+   Windows + NVIDIA, ComfyUI portable with torch cu130 and Python 3.13 (the current portable):
 
-`install.py` installs `llama-cpp-python`: it detects the CUDA version your torch was built
-against and fetches the matching JamePeng GPU wheel (Windows + NVIDIA); anywhere else it puts in
-the CPU build so the node still imports. If the model loads on CPU, the console prints the exact
-manual command. Restart ComfyUI.
+       python_embeded\python.exe -m pip install --force-reinstall --no-deps https://github.com/JamePeng/llama-cpp-python/releases/download/v0.3.48-cu130-win-20260821/llama_cpp_python-0.3.48+cu130-cp313-cp313-win_amd64.whl
+
+   Other CUDA / Python versions and Linux: pick the matching wheel on
+   https://github.com/JamePeng/llama-cpp-python/releases (`cuXXX` = your torch CUDA,
+   `cp3XX` = your Python). No NVIDIA GPU: `pip install llama-cpp-python` (CPU, slow).
 
 Put GGUF models in `ComfyUI/models/LLM/` (a matching `mmproj-*.gguf` next to them for vision).
 `ComfyUI/models/text_encoders` is scanned too, because GGUF VL encoders conventionally live there.

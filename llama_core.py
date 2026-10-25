@@ -13,15 +13,24 @@ import sys
 import folder_paths
 import comfy.model_management as mm
 
-from llama_cpp import Llama
-from llama_cpp.llama_chat_format import (
-    Llava15ChatHandler,
-    Llava16ChatHandler,
-    MoondreamChatHandler,
-    NanoLlavaChatHandler,
-    Llama3VisionAlphaChatHandler,
-    MiniCPMv26ChatHandler,
-)
+# llama-cpp-python is installed by the user (the right GPU build depends on their torch CUDA
+# and OS, see _install_hint). Without it the pack still loads, so the node shows up and its
+# console line says exactly what to install, instead of a silent "missing node".
+try:
+    from llama_cpp import Llama
+    from llama_cpp.llama_chat_format import (
+        Llava15ChatHandler,
+        Llava16ChatHandler,
+        MoondreamChatHandler,
+        NanoLlavaChatHandler,
+        Llama3VisionAlphaChatHandler,
+        MiniCPMv26ChatHandler,
+    )
+    _LLAMA_MISSING = False
+except ImportError:
+    Llama = Llava15ChatHandler = Llava16ChatHandler = MoondreamChatHandler = None
+    NanoLlavaChatHandler = Llama3VisionAlphaChatHandler = MiniCPMv26ChatHandler = None
+    _LLAMA_MISSING = True
 
 from .support.gguf_layers import get_layer_count, get_nextn_count
 
@@ -31,7 +40,7 @@ from .support.gguf_layers import get_layer_count, get_nextn_count
 # (CPU-only build if not), and whether its required CUDA major (from its cudart/cublas
 # import) matches torch's CUDA major — a mismatch (e.g. cu128 wheel on cu130 torch) means
 # ggml-cuda.dll can't load its runtime DLLs and silently falls back to CPU.
-_JAMEPENG_VER, _JAMEPENG_DATE = "0.3.44", "20260721"
+_JAMEPENG_VER, _JAMEPENG_DATE = "0.3.48", "20260821"
 _CU_TAGS = {12: [124, 126, 128], 13: [130, 131]}
 
 
@@ -103,7 +112,8 @@ _GPU_STATUS, _GPU_DETAIL = _gpu_status()
 
 
 def _cuda_wheel_hint():
-    """Reinstall command for THIS Python + THIS torch CUDA version (mirrors install.py)."""
+    """GPU wheel for THIS Python + THIS torch CUDA version, as (python, url). Windows wheels;
+    on other systems url is None and the user picks one on the releases page."""
     tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
     cu = 128
     try:
@@ -116,10 +126,37 @@ def _cuda_wheel_hint():
             cu = fitting[-1] if fitting else (tags[0] if tags else 128)
     except Exception:
         pass
+    if sys.platform != "win32":
+        return sys.executable, None
     url = (f"https://github.com/JamePeng/llama-cpp-python/releases/download/"
            f"v{_JAMEPENG_VER}-cu{cu}-win-{_JAMEPENG_DATE}/"
            f"llama_cpp_python-{_JAMEPENG_VER}+cu{cu}-{tag}-{tag}-win_amd64.whl")
     return sys.executable, url
+
+
+_RELEASES = "https://github.com/JamePeng/llama-cpp-python/releases"
+
+
+def _install_hint():
+    """Lines telling the user how to install the GPU build of llama-cpp-python. Prints only;
+    the node never installs anything by itself."""
+    exe, url = _cuda_wheel_hint()
+    if url:
+        return ["FULLY CLOSE ComfyUI, then run:",
+                f'  "{exe}" -m pip install --force-reinstall --no-deps {url}',
+                f"Other builds: {_RELEASES}"]
+    tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    return [f"Pick the linux_x86_64 wheel for your CUDA and {tag} on {_RELEASES}, then:",
+            f'  "{exe}" -m pip install --force-reinstall --no-deps <wheel URL>',
+            f'CPU-only fallback: "{exe}" -m pip install llama-cpp-python']
+
+
+if _LLAMA_MISSING:
+    print("=" * 72)
+    print("[llm-prompter-v2] llama-cpp-python is not installed - the prompter cannot run an LLM yet.")
+    for line in _install_hint():
+        print(f"[llm-prompter-v2] {line}")
+    print("=" * 72)
 
 
 # Base handlers always present in the fork.
@@ -268,7 +305,7 @@ def _mtp_kwargs(model_path, enabled, draft_max, vision=False):
         from llama_cpp.llama_speculative import SpecConfig, SpeculativeType
     except Exception:
         print("[llm-prompter-v2] mtp_speculative needs llama-cpp-python >= 0.3.48 "
-              "-> loading normally. Run install.py to upgrade.")
+              "-> loading normally. Update llama-cpp-python (see the README).")
         return {}
     print(f"[llm-prompter-v2] MTP enabled: {heads} NextN head(s), draft_n_max={draft_max}")
     return {
@@ -402,7 +439,6 @@ class LLMEngine:
             cls.chat_handler = handler_cls(verbose=False) if handler_cls is not None else None
 
         if n_gpu_layers != 0 and _GPU_STATUS in ("cpu", "mismatch"):
-            exe, url = _cuda_wheel_hint()
             print("=" * 72)
             if _GPU_STATUS == "mismatch":
                 need, tmaj = _GPU_DETAIL
@@ -410,11 +446,12 @@ class LLMEngine:
                       f"your torch uses CUDA {tmaj}.x -> GPU offload FAILS (silent CPU fallback).")
             else:
                 print("[llm-prompter-v2] WARNING: llama-cpp-python is a CPU-ONLY build (no CUDA).")
-            print("[llm-prompter-v2] The LLM will run on CPU (slow). To fix, FULLY CLOSE ComfyUI, then run:")
-            print(f'[llm-prompter-v2]   "{exe}" -m pip install --force-reinstall --no-deps {url}')
-            print("[llm-prompter-v2] (or re-run the node's install.py). Wheels: "
-                  "https://github.com/JamePeng/llama-cpp-python/releases")
+            print("[llm-prompter-v2] The LLM will run on CPU (slow). To fix:")
+            for line in _install_hint():
+                print(f"[llm-prompter-v2] {line}")
             print("=" * 72)
+        if _LLAMA_MISSING:
+            raise RuntimeError("llama-cpp-python is not installed. " + " ".join(_install_hint()))
         print(f"[llm-prompter-v2] Loading model: {model}  (n_gpu_layers={n_gpu_layers}, n_cpu_moe={n_cpu_moe})")
         cls.llm = Llama(
             model_path,
