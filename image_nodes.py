@@ -409,21 +409,45 @@ class ArtfatLLMPrompterV2:
         # older widget layout keeps running instead of hard-erroring.
         return True
 
+    @staticmethod
+    def _gallery_files_stamp(refs_json):
+        """size+mtime of every gallery file. Widget values (refs_json included) are already part
+        of ComfyUI's cache key, so a changed gallery re-runs the node on its own; what the key
+        cannot see is a file REPLACED under the same name in input/ (17 Nov) -- the refs leave
+        through `refs out` in both fast paths below, so a stale file would be served from cache."""
+        try:
+            import folder_paths
+            items = json.loads(refs_json) if str(refs_json or "").strip() else []
+        except Exception:
+            return ""
+        out = []
+        for it in items if isinstance(items, list) else []:
+            name = (it or {}).get("file") if isinstance(it, dict) else None
+            if not name:
+                continue
+            try:
+                st = os.stat(folder_paths.get_annotated_filepath(name))
+                out.append(f"{name}:{st.st_size}:{st.st_mtime_ns}")
+            except Exception:
+                out.append(f"{name}:missing")
+        return "|".join(out)
+
     @classmethod
     def IS_CHANGED(cls, **kwargs):
         h = hashlib.sha256()
+        stamp = cls._gallery_files_stamp(kwargs.get("refs_json", "[]"))
         # BATCH list mode: only the fields that shape positive_list matter (the LLM is skipped).
         if bool(kwargs.get("batch_mode", False)):
             h.update((f"batch|bp={kwargs.get('batch_prompts', '')!r}|neg={kwargs.get('negative', '')!r}"
                       f"|pre={kwargs.get('prefix', '')!r}|suf={kwargs.get('suffix', '')!r}"
-                      f"|clip={kwargs.get('clip') is not None}").encode("utf-8", "ignore"))
+                      f"|clip={kwargs.get('clip') is not None}|files={stamp}").encode("utf-8", "ignore"))
             return h.hexdigest()
         # LLM OFF: only final_prompt is encoded, so skip hashing the image tensors entirely
         # (a multi-MB .cpu()+sha256 per queue) and go straight to the sampler.
         if not bool(kwargs.get("llm_enabled", True)):
             h.update((f"off|fp={kwargs.get('final_prompt', '')!r}|neg={kwargs.get('negative', '')!r}"
                       f"|pre={kwargs.get('prefix', '')!r}|suf={kwargs.get('suffix', '')!r}"
-                      f"|clip={kwargs.get('clip') is not None}").encode("utf-8", "ignore"))
+                      f"|clip={kwargs.get('clip') is not None}|files={stamp}").encode("utf-8", "ignore"))
             return h.hexdigest()
         for name in sorted(kwargs):
             v = kwargs[name]

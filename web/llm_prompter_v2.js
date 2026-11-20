@@ -986,6 +986,12 @@ function refsOutputIndex(node) {
 // slot -- because that is what graphToPrompt serializes. Our own outputs[slot].links can miss
 // some (seen 5 Oct: two encoder inputs fed from `refs` that the list did not hold, so they went
 // out un-renumbered as ref_1 and drew white); the consumer's input.link cannot.
+// Numbered inputs take the reference their NUMBER names, not their rank (17 Nov): with
+// image_1 fed through an "image at 4 MP" scaler and only image_2 wired straight from `refs`,
+// rank-counting made image_2 the consumer's first wire, so it was sent ref_1 again [screen].
+// The number is counted from the lowest number that input family has on that node, so
+// image_1.. (1-based) and image0.. (0-based) both start at ref_1. Unnumbered inputs (a plain
+// `image`) are still counted in order.
 // Returns [{ link, index, targetId, key }] where index 0 = ref_1 and key is the input name.
 function orderedRefLinks(node) {
     const graph = (node && node.graph) || app.graph;
@@ -999,10 +1005,18 @@ function orderedRefLinks(node) {
             const link = graphLink(graph, tinput.link);
             const origin = linkOrigin(link);
             if (!origin || origin.id !== ourId || origin.slot !== slot) return;
-            const m = /(\d+)$/.exec(String(tinput.name || ""));
+            const name = String(tinput.name || "");
+            const m = /^(.*?)(\d+)$/.exec(name);
+            let base = 1;
+            if (m) {
+                for (const other of tnode.inputs || []) {
+                    const om = /^(.*?)(\d+)$/.exec(String((other && other.name) || ""));
+                    if (om && om[1] === m[1]) base = Math.min(base, Number(om[2]));
+                }
+            }
             const lid = Number(link.id != null ? link.id : tinput.link);
-            const entry = { link, targetId: Number(tnode.id), key: String(tinput.name || ""),
-                            num: m ? Number(m[1]) : Infinity, tslot,
+            const entry = { link, targetId: Number(tnode.id), key: name,
+                            num: m ? Number(m[2]) : Infinity, base, tslot,
                             lid: Number.isFinite(lid) ? lid : 0 };
             if (!groups.has(entry.targetId)) groups.set(entry.targetId, []);
             groups.get(entry.targetId).push(entry);
@@ -1011,7 +1025,12 @@ function orderedRefLinks(node) {
     const out = [];
     for (const list of groups.values()) {
         list.sort((a, b) => (a.num - b.num) || (a.tslot - b.tslot) || (a.lid - b.lid));
-        list.forEach((e, index) => out.push({ link: e.link, index, targetId: e.targetId, key: e.key }));
+        let rank = 0;
+        list.forEach((e) => {
+            const index = Number.isFinite(e.num) ? e.num - e.base : rank;
+            rank += 1;
+            out.push({ link: e.link, index, targetId: e.targetId, key: e.key });
+        });
     }
     return out;
 }

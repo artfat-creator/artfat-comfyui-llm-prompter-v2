@@ -437,6 +437,47 @@ INSTRUCTION_PRESETS = {
         "Phrase everything affirmatively, as what is there and what is kept. Output only the "
         "instruction, one paragraph, no labels, headers, commentary, reasoning or <think> blocks."
     ),
+    # ---- P-H3 Image (Pruna P-H3 on MiniMax H3), 17 Nov. Pair with system preset
+    # PH3_Image_Edit_Writer.txt and Refs -> REFERENCES = edit (t2i sends NO pictures to the model).
+    "PH3_Body1_Face2 (body/canvas Im1 + face Im2)": (
+        "Write the P-H3 edit prompt for the brief. <Image 1> is the canvas: her body, and her "
+        "outfit or nudity unless the brief changes it. <Image 2> is her face and hair. Open with "
+        "'Edit <Picture 1>.', place her as the brief asks with both hands accounted for, give the "
+        "viewpoint (where the shot is taken from, no photographer, no phone unless it is a selfie). Describe from <Image 2> only what you can see: hair colour, length and "
+        "style, makeup, earrings (not eye colour). Describe from <Image 1> the outfit item by item, or "
+        "state she is fully nude -- unless the brief names clothing: then design the brief's garments concretely and ignore the picture's outfit. Keep her face, hair, body shape and skin tone exactly as they "
+        "are. Output only the prompt."
+    ),
+    "PH3_Body1_Face2_Scene3 (body Im1 + face Im2 + room Im3)": (
+        "Write the P-H3 edit prompt for the brief. <Image 1> is the canvas with her body and outfit, "
+        "<Image 2> her face and hair, <Image 3> the room she must be in. Open with 'Edit <Picture 1>.', "
+        "move her into the room from <Picture 3> and name its main visible pieces and its light "
+        "direction from <Image 3>. Pose as the brief asks, both hands placed, give the viewpoint "
+        "(no photographer, no phone). Describe her visible hair, makeup and jewellery from <Image 2> and her "
+        "outfit item by item from <Image 1> (or fully nude). Keep her face, hair, body shape, skin "
+        "tone and the room from <Picture 3> exactly as they are. Output only the prompt."
+    ),
+    "PH3_TwoPersons (A body Im1, A face Im2, B body Im3, B face Im4)": (
+        "Write the P-H3 edit prompt for a frame with TWO adult women. Woman A: body (and outfit, unless the brief names clothing) from "
+        "<Image 1> (the canvas), face and hair from <Image 2>. Woman B: body (and outfit, unless the brief names clothing) from "
+        "<Image 3>, face and hair from <Image 4>. Open with 'Edit <Picture 1>.' Name each woman by "
+        "her pictures every time ('the woman from <Picture 1> with the face from <Picture 2>'), "
+        "never by pronoun alone when it could be either. Describe each woman's visible hair "
+        "and makeup from her own face picture only -- never mix their features. If the brief names clothing, it replaces both pictures' outfits: design it concretely per woman. Stage the "
+        "brief's action with exact body logic: who does what with which hand, each woman exactly "
+        "two arms, where every hand is. Give the viewpoint from where both faces are visible "
+        "(no photographer, no phone). Keep both faces, hair and body shapes exactly as in their pictures. Output only "
+        "the prompt."
+    ),
+    "PH3_Person1_Pose2 (person Im1 + pose Im2)": (
+        "Write the P-H3 edit prompt for the brief. <Image 1> is the person (canvas): her face, hair, "
+        "body and outfit stay. <Image 2> only shows the POSE to copy. Open with 'Edit <Picture 1>.' "
+        "Describe the pose from <Image 2> in plain body terms -- torso direction, each arm and hand, "
+        "each leg and foot, head turn and gaze -- and do not take anything else from <Image 2>: not "
+        "its person, clothes, room or light. Describe her visible hair and outfit from <Image 1>. "
+        "Give the viewpoint (no photographer, no phone). Keep her face, hair, body shape, skin tone and outfit exactly as "
+        "in <Picture 1>. Output only the prompt."
+    ),
 }
 
 INSTRUCTION_NAMES = list(INSTRUCTION_PRESETS.keys())
